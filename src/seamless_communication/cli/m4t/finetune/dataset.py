@@ -91,6 +91,7 @@ UNITY_TO_FLEURS_LANG_MAPPING = {
     "vie": "vi_vn",
     "yor": "yo_ng",
     "zul": "zu_za",
+    "zh":"cmn_hans_cn"
 }
 
 
