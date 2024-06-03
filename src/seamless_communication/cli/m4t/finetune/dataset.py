@@ -136,6 +136,7 @@ def download_fleurs(
     device = (
         torch.device("cuda:0") if torch.cuda.device_count() > 0 else torch.device("cpu")
     )
+    print("tokenizing")
     tokenizer = UnitSpeechTokenizer(device=device)
     dataset_iterator = Speech2SpeechFleursDatasetBuilder(
         source_lang=UNITY_TO_FLEURS_LANG_MAPPING[source_lang],
@@ -146,6 +147,7 @@ def download_fleurs(
         skip_target_audio=False,
         split=split,
     )
+    print("writing")
     manifest_path: str = os.path.join(save_directory, f"{split}_manifest.json")
     with open(manifest_path, "w") as fp_out:
         for idx, sample in enumerate(dataset_iterator.__iter__(), start=1):
