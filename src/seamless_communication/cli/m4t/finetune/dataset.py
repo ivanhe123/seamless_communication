@@ -154,6 +154,7 @@ def download_fleurs(
             sample.target.lang = target_lang
             sample.target.waveform = None  # already extracted units
             fp_out.write(json.dumps(dataclasses.asdict(sample)) + "\n")
+            print(json.dumps(dataclasses.asdict(sample)) + "\n")
     logger.info(f"Saved {idx} samples for split={split} to {manifest_path}")
     logger.info(f"Manifest saved to: {manifest_path}")
 
