@@ -245,6 +245,5 @@ def main() -> None:
             "Your HuggingFace token is necessary for GigaSpeech. Please read the GigaSpeech agreement."
         download_gigaspeech(args.split, args.huggingface_token, args.save_dir)
 
-
-if __name__ == "__main__":
-    main()
+split=input("split")
+download_fleurs("zh", "eng", split, "/kaggle/working/dataset_dir")
