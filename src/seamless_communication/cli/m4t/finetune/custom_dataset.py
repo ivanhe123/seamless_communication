@@ -126,7 +126,7 @@ def download_fleurs_dataset(
         torch.device("cuda:0") if torch.cuda.device_count() > 0 else torch.device("cpu")
     )
     tokenizer = UnitSpeechTokenizer(device=device)
-    dataset_iterator = Speech2SpeechFleursDatasetBuilder(
+    dataset_iterator = Speech2SpeechFleursDatasetBuilderCustom(
         source_lang=UNITY_TO_FLEURS_LANG_MAPPING[source_lang],
         target_lang=UNITY_TO_FLEURS_LANG_MAPPING[target_lang],
         dataset_cache_dir=save_directory,
