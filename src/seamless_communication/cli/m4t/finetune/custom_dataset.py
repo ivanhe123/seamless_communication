@@ -11,15 +11,10 @@ import json
 import logging
 import os
 from pathlib import Path
-from tqdm import tqdm
 
 import torch
 
-from datasets import load_dataset
-from seamless_communication.datasets.huggingface import (
-    Speech2SpeechFleursDatasetBuilder,
-    SpeechTokenizer,
-)
+from seamless_communication.datasets.huggingface import Speech2SpeechFleursDatasetBuilderCustom,SpeechTokenizer
 from seamless_communication.models.unit_extractor import UnitExtractor
 
 logging.basicConfig(
@@ -29,10 +24,6 @@ logging.basicConfig(
 
 logger = logging.getLogger("dataset")
 
-
-SUPPORTED_DATASETS = ['google/fleurs', 'speechcolab/gigaspeech']
-""" List of Huggingface Datasets that we support at the moment
-"""
 
 # Full list of FLEURS langcodes is available at https://huggingface.co/datasets/google/fleurs
 # Full list of M4T langcodes is available
@@ -78,7 +69,6 @@ UNITY_TO_FLEURS_LANG_MAPPING = {
     "rus": "ru_ru",
     "snd": "sd_in",
     "slk": "sk_sk",
-    "spa": "es_419",
     "srp": "sr_rs",
     "swh": "sw_ke",
     "tam": "ta_in",
@@ -91,7 +81,6 @@ UNITY_TO_FLEURS_LANG_MAPPING = {
     "vie": "vi_vn",
     "yor": "yo_ng",
     "zul": "zu_za",
-    "zh":"cmn_hans_zh"
 }
 
 
@@ -125,12 +114,12 @@ class UnitSpeechTokenizer(SpeechTokenizer):
         )
 
 
-def download_fleurs(
+def download_fleurs_dataset(
     source_lang: str,
     target_lang: str,
     split: str,
     save_directory: str,
-):
+) -> str:
     _check_lang_code_mapping(source_lang)
     _check_lang_code_mapping(target_lang)
     device = (
@@ -155,4 +144,4 @@ def download_fleurs(
             sample.target.waveform = None  # already extracted units
             fp_out.write(json.dumps(dataclasses.asdict(sample)) + "\n")
     logger.info(f"Saved {idx} samples for split={split} to {manifest_path}")
-    logger.info(f"Manifest saved to: {manifest_path}")
+    return manifest_path
