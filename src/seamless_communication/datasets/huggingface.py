@@ -4,7 +4,8 @@
 # This source code is licensed under the license found in the
 # MIT_LICENSE file in the root directory of this source tree.
 
-
+import wave
+from scipy.io import wavfile
 import logging
 import os
 from abc import abstractmethod
@@ -28,7 +29,7 @@ class SpeechTokenizer:
 class Speech2SpeechFleursDatasetBuilder:
     """Assembles speech2speech dataset from google/fleurs on HuggingFace"""
 
-    DATASET_NAME = "google/fleurs"
+    HF_FLEURS_DATASET_NAME = "google/fleurs"
 
     def __init__(
         self,
@@ -91,12 +92,11 @@ class Speech2SpeechFleursDatasetBuilder:
 
     def iterate_lang_audio_samples(self, lang: str) -> Iterable[MultimodalSample]:
         ds = load_dataset(
-            self.DATASET_NAME,
+            self.HF_FLEURS_DATASET_NAME,
             lang,
             split=self.split,
             cache_dir=self.dataset_cache_dir,
             streaming=False,
-            trust_remote_code=True,
         )
         for item in ds:
             audio_path = os.path.join(
@@ -137,17 +137,13 @@ class Speech2SpeechFleursDatasetBuilder:
             if sample.id in target_samples:
                 yield LangPairSample(source=sample, target=target_samples[sample.id])
 
-
-class Speech2TextGigaspeechDatasetBuilder:
-    """ Assembles speech2speech dataset from google/fleurs on HuggingFace.
-        This dataset requires signing an license agreement and using an auth token.
-    """
-
-    DATASET_NAME = "speechcolab/gigaspeech"
+class Speech2SpeechFleursDatasetBuilderCustom:
+    """Assembles speech2speech dataset from google/fleurs on HuggingFace"""
 
     def __init__(
         self,
-        auth_token: str,
+        source_lang: str,
+        target_lang: str,
         split: str = "test",
         skip_source_audio: bool = True,
         skip_target_audio: bool = True,
@@ -155,12 +151,11 @@ class Speech2TextGigaspeechDatasetBuilder:
         dataset_cache_dir: Optional[str] = None,
         speech_tokenizer: Optional[SpeechTokenizer] = None,
     ):
-        self.auth_token = auth_token
+        self.source_lang = source_lang
+        self.target_lang = target_lang
         self.split = split
         self.dataset_cache_dir = dataset_cache_dir
         self.audio_dtype = audio_dtype
-        self.skip_source_audio = skip_source_audio
-        self.skip_target_audio = skip_target_audio
         self.speech_tokenizer = speech_tokenizer
 
     def _prepare_sample(
@@ -172,11 +167,14 @@ class Speech2TextGigaspeechDatasetBuilder:
         waveform_npy: Optional[np.ndarray] = None,
         sampling_rate: Optional[int] = None,
     ) -> MultimodalSample:
-        if waveform_npy is not None:
-            waveform = torch.from_numpy(waveform_npy).to(self.audio_dtype)
-        else:
-            waveform = None
-        if self.speech_tokenizer is not None and waveform_npy is not None:
+        should_skip_audio = (
+            lang == self.target_lang
+            or lang == self.source_lang
+            or waveform_npy is None
+        )
+        waveform = torch.from_numpy(waveform_npy).to(self.audio_dtype)
+
+        if self.speech_tokenizer is not None and not should_skip_audio:
             assert waveform is not None
             assert sampling_rate is not None
             units_tensor = self.speech_tokenizer.encode(
@@ -196,24 +194,24 @@ class Speech2TextGigaspeechDatasetBuilder:
         )
 
     def iterate_lang_audio_samples(self, lang: str) -> Iterable[MultimodalSample]:
-        ds = load_dataset(
-            self.DATASET_NAME,
-            lang,
-            split=self.split,
-            cache_dir=self.dataset_cache_dir,
-            streaming=False,
-            trust_remote_code=True,
-        )
-        for item in ds:
+        ds=os.listdir(f"Z:\Desktop\seamless-project\all_datasets\audio_data\wavs\{lang}")
+        for item,i in enumerate(ds):
+            # Load the file
+            sample_rate, data = wavfile.read('your_file.wav')
+
+            # Check if stereo
+            if len(data.shape) > 1:
+                # Convert to mono by selecting only the first channel
+                data = data[:, 0]
             audio_path = os.path.join(
-                os.path.dirname(item["path"]), item["audio"]["path"]
+                item
             )
             (sample_id, audio_local_path, waveform, sampling_rate, text) = (
-                item["id"],
+                i,
                 audio_path,
-                item["audio"]["array"],
-                item["audio"]["sampling_rate"],
-                item["transcription"],
+                data,
+                sample_rate,
+                "",
             )
             yield self._prepare_sample(
                 sample_id=sample_id,
