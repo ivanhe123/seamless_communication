@@ -193,11 +193,11 @@ class Speech2SpeechFleursDatasetBuilderCustom:
             units=units,
         )
 
-    def iterate_lang_audio_samples(self, lang: str) -> Iterable[MultimodalSample]:
-        ds=os.listdir(f"Z:\Desktop\seamless-project\all_datasets\audio_data\wavs\{lang}")
+    def iterate_lang_audio_samples(self, lang: str, data_dir: str) -> Iterable[MultimodalSample]:
+        ds=os.listdir(os.path.join(data_dir, lang))
         for item,i in enumerate(ds):
             # Load the file
-            sample_rate, data = wavfile.read('your_file.wav')
+            sample_rate, data = wavfile.read(item)
 
             # Check if stereo
             if len(data.shape) > 1:
