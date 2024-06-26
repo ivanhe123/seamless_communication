@@ -243,9 +243,6 @@ def init_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = init_parser().parse_args()
-    assert args.name in SUPPORTED_DATASETS, \
-        f"The only supported datasets are `{SUPPORTED_DATASETS}`. Please use one of these in `--name`."
-
     if args.name == 'google/fleurs':
         download_fleurs(args.source_lang, args.target_lang, args.split, args.save_dir)
     elif args.name == 'speechcolab/gigaspeech':
