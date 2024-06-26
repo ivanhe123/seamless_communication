@@ -130,6 +130,7 @@ def download_fleurs(
     target_lang: str,
     split: str,
     save_directory: str,
+    path_sdds=None,
 ):
     _check_lang_code_mapping(source_lang)
     _check_lang_code_mapping(target_lang)
@@ -146,6 +147,7 @@ def download_fleurs(
         skip_source_audio=True,  # don't extract units from source audio
         skip_target_audio=False,
         split=split,
+        dataset_dir = path_sdds,
     )
     print("writing")
     manifest_path: str = os.path.join(save_directory, f"{split}_manifest.json")
@@ -196,7 +198,7 @@ def init_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--name",
         type=str,
-        required=True,
+        required=False,
         help="HuggingFace name of the dataset to prepare.",
     )
     parser.add_argument(
@@ -209,6 +211,12 @@ def init_parser() -> argparse.ArgumentParser:
         "--target_lang",
         type=str,
         required=True,
+        help="M4T langcode of the dataset TARGET language",
+    )
+    parser.add_argument(
+        "--path_custom",
+        type=str,
+        required=False,
         help="M4T langcode of the dataset TARGET language",
     )
     parser.add_argument(
@@ -244,6 +252,6 @@ def main() -> None:
         assert args.huggingface_token is not None, \
             "Your HuggingFace token is necessary for GigaSpeech. Please read the GigaSpeech agreement."
         download_gigaspeech(args.split, args.huggingface_token, args.save_dir)
+    else:
+        download_fleurs(args.source_lang, args.target_lang, args.split, args.save_dir, pathssds=args.path_custom)
 
-split=input("split")
-download_fleurs("zh", "eng", split, "/kaggle/working/dataset_dir")
