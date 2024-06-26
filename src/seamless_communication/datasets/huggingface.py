@@ -41,6 +41,7 @@ class Speech2SpeechFleursDatasetBuilder:
         audio_dtype: torch.dtype = torch.float32,
         dataset_cache_dir: Optional[str] = None,
         speech_tokenizer: Optional[SpeechTokenizer] = None,
+        dataset_dir = None
     ):
         self.source_lang = source_lang
         self.target_lang = target_lang
@@ -50,6 +51,7 @@ class Speech2SpeechFleursDatasetBuilder:
         self.skip_source_audio = skip_source_audio
         self.skip_target_audio = skip_target_audio
         self.speech_tokenizer = speech_tokenizer
+        self.dataset_dir = dataset_dir
 
     def _prepare_sample(
         self,
@@ -91,13 +93,22 @@ class Speech2SpeechFleursDatasetBuilder:
         )
 
     def iterate_lang_audio_samples(self, lang: str) -> Iterable[MultimodalSample]:
-        ds = load_dataset(
-            self.HF_FLEURS_DATASET_NAME,
-            lang,
-            split=self.split,
-            cache_dir=self.dataset_cache_dir,
-            streaming=False,
-        )
+        if self.dataset_dir == None:
+            ds = load_dataset(
+                self.HF_FLEURS_DATASET_NAME,
+                lang,
+                split=self.split,
+                cache_dir=self.dataset_cache_dir,
+                streaming=False,
+            )
+        else:
+            ds = load_dataset(
+                path = self.dataset_dir,
+                lang,
+                split=self.split,
+                cache_dir=self.dataset_cache_dir,
+                streaming=False,
+            )
         for item in ds:
             audio_path = os.path.join(
                 os.path.dirname(item["path"]), item["audio"]["path"]
