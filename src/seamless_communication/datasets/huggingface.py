@@ -196,7 +196,7 @@ class Speech2SpeechFleursDatasetBuilderCustom:
         )
 
     def iterate_lang_audio_samples(self, lang: str, data_dir: str) -> Iterable[MultimodalSample]:
-        ds=os.listdir(os.path.join(data_dir, lang))
+        ds=os.listdir(os.path.join(data_dir, lang, "audio"))
         for item,i in enumerate(ds):
             # Load the file
             sample_rate, data = wavfile.read(item)
