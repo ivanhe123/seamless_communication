@@ -11,11 +11,9 @@ import json
 import logging
 import os
 from pathlib import Path
-from tqdm import tqdm
 
 import torch
 
-from datasets import load_dataset
 from seamless_communication.datasets.huggingface import (
     Speech2SpeechFleursDatasetBuilder,
     SpeechTokenizer,
@@ -29,10 +27,6 @@ logging.basicConfig(
 
 logger = logging.getLogger("dataset")
 
-
-SUPPORTED_DATASETS = ['google/fleurs', 'speechcolab/gigaspeech']
-""" List of Huggingface Datasets that we support at the moment
-"""
 
 # Full list of FLEURS langcodes is available at https://huggingface.co/datasets/google/fleurs
 # Full list of M4T langcodes is available
@@ -78,7 +72,6 @@ UNITY_TO_FLEURS_LANG_MAPPING = {
     "rus": "ru_ru",
     "snd": "sd_in",
     "slk": "sk_sk",
-    "spa": "es_419",
     "srp": "sr_rs",
     "swh": "sw_ke",
     "tam": "ta_in",
@@ -91,7 +84,6 @@ UNITY_TO_FLEURS_LANG_MAPPING = {
     "vie": "vi_vn",
     "yor": "yo_ng",
     "zul": "zu_za",
-    "zh":"cmn_hans_cn"
 }
 
 
@@ -125,19 +117,17 @@ class UnitSpeechTokenizer(SpeechTokenizer):
         )
 
 
-def download_fleurs(
+def download_fleurs_dataset(
     source_lang: str,
     target_lang: str,
     split: str,
     save_directory: str,
-    path_sdds=None,
-):
+) -> str:
     _check_lang_code_mapping(source_lang)
     _check_lang_code_mapping(target_lang)
     device = (
         torch.device("cuda:0") if torch.cuda.device_count() > 0 else torch.device("cpu")
     )
-    print("tokenizing")
     tokenizer = UnitSpeechTokenizer(device=device)
     dataset_iterator = Speech2SpeechFleursDatasetBuilder(
         source_lang=UNITY_TO_FLEURS_LANG_MAPPING[source_lang],
@@ -147,9 +137,7 @@ def download_fleurs(
         skip_source_audio=True,  # don't extract units from source audio
         skip_target_audio=False,
         split=split,
-        dataset_dir = path_sdds,
     )
-    print("writing")
     manifest_path: str = os.path.join(save_directory, f"{split}_manifest.json")
     with open(manifest_path, "w") as fp_out:
         for idx, sample in enumerate(dataset_iterator.__iter__(), start=1):
@@ -158,48 +146,17 @@ def download_fleurs(
             sample.target.lang = target_lang
             sample.target.waveform = None  # already extracted units
             fp_out.write(json.dumps(dataclasses.asdict(sample)) + "\n")
-            print(json.dumps(dataclasses.asdict(sample)) + "\n")
     logger.info(f"Saved {idx} samples for split={split} to {manifest_path}")
-    logger.info(f"Manifest saved to: {manifest_path}")
-
-
-def download_gigaspeech(subset: str, huggingface_token: str, save_directory: str):
-    ds = load_dataset("speechcolab/gigaspeech", subset, cache_dir=save_directory, token=huggingface_token)
-    for split in ds:
-        manifest_path = os.path.join(save_directory, f"{subset}_{split}_manifest.json")
-        logger.info(f"Preparing {split} split...")
-        with open(manifest_path, "w") as f:
-            for sample in tqdm(ds[split]):
-                f.write(json.dumps({
-                "source": {
-                    "id": sample["segment_id"],
-                    "text": sample["text"],
-                    "lang":"eng",
-                    "audio_local_path": sample["audio"]["path"],
-                    "sampling_rate": sample["audio"]["sampling_rate"],
-                },
-                "target": {
-                    "id": sample["segment_id"],
-                    "text": sample["text"],
-                    "lang": "eng",
-                }
-                }) + "\n")
-        logger.info(f"Manifest for GigaSpeech-{subset}-{split} saved to: {manifest_path}")
+    return manifest_path
 
 
 def init_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Helper script to download training/evaluation dataset (FLEURS or GigaSpeech),"
+            "Helper script to download training/evaluation dataset (FLEURS),"
             "extract units from target audio and save the dataset as a manifest "
             "consumable by `finetune.py`."
         )
-    )
-    parser.add_argument(
-        "--name",
-        type=str,
-        required=False,
-        help="HuggingFace name of the dataset to prepare.",
     )
     parser.add_argument(
         "--source_lang",
@@ -214,12 +171,6 @@ def init_parser() -> argparse.ArgumentParser:
         help="M4T langcode of the dataset TARGET language",
     )
     parser.add_argument(
-        "--path_custom",
-        type=str,
-        required=False,
-        help="M4T langcode of the dataset TARGET language",
-    )
-    parser.add_argument(
         "--split",
         type=str,
         required=True,
@@ -231,24 +182,19 @@ def init_parser() -> argparse.ArgumentParser:
         required=True,
         help="Directory where the datastets will be stored with HuggingFace datasets cache files",
     )
-    parser.add_argument(
-        "--huggingface_token",
-        type=str,
-        required=False,
-        default=None,
-        help="Your HuggingFace token, this is necessary for some datasets like GigaSpeech.",
-    )
     return parser
 
 
 def main() -> None:
     args = init_parser().parse_args()
-    if args.name == 'google/fleurs':
-        download_fleurs(args.source_lang, args.target_lang, args.split, args.save_dir)
-    elif args.name == 'speechcolab/gigaspeech':
-        assert args.huggingface_token is not None, \
-            "Your HuggingFace token is necessary for GigaSpeech. Please read the GigaSpeech agreement."
-        download_gigaspeech(args.split, args.huggingface_token, args.save_dir)
-    else:
-        download_fleurs(args.source_lang, args.target_lang, args.split, args.save_dir, path_sdds=args.path_custom)
+    manifest_path = download_fleurs_dataset(
+        source_lang=args.source_lang,
+        target_lang=args.target_lang,
+        split=args.split,
+        save_directory=args.save_dir,
+    )
+    logger.info(f"Manifest saved to: {manifest_path}")
 
+
+if __name__ == "__main__":
+    main()
