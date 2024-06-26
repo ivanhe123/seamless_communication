@@ -104,7 +104,7 @@ class Speech2SpeechFleursDatasetBuilder:
         else:
             ds = load_dataset(
                 path = self.dataset_dir,
-                lang,
+                name = lang,
                 split=self.split,
                 cache_dir=self.dataset_cache_dir,
                 streaming=False,
