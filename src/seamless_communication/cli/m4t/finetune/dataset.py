@@ -250,5 +250,5 @@ def main() -> None:
             "Your HuggingFace token is necessary for GigaSpeech. Please read the GigaSpeech agreement."
         download_gigaspeech(args.split, args.huggingface_token, args.save_dir)
     else:
-        download_fleurs(args.source_lang, args.target_lang, args.split, args.save_dir, pathsdds=args.path_custom)
+        download_fleurs(args.source_lang, args.target_lang, args.split, args.save_dir, path_sdds=args.path_custom)
 
