@@ -150,6 +150,7 @@ class Speech2SpeechFleursDatasetBuilderCustom:
         audio_dtype: torch.dtype = torch.float32,
         dataset_cache_dir: Optional[str] = None,
         speech_tokenizer: Optional[SpeechTokenizer] = None,
+        dataset_path: Optional[str] = None
     ):
         self.source_lang = source_lang
         self.target_lang = target_lang
@@ -157,6 +158,7 @@ class Speech2SpeechFleursDatasetBuilderCustom:
         self.dataset_cache_dir = dataset_cache_dir
         self.audio_dtype = audio_dtype
         self.speech_tokenizer = speech_tokenizer
+        self.dataset_path = dataset_path
 
     def _prepare_sample(
         self,
@@ -226,7 +228,7 @@ class Speech2SpeechFleursDatasetBuilderCustom:
         logger.info(f"Loading {self.target_lang} samples")
         target_samples: Dict[int, MultimodalSample] = {}
         for idx, sample in enumerate(
-            self.iterate_lang_audio_samples(lang=self.target_lang)
+            self.iterate_lang_audio_samples(data_dir=self.dataset_path, lang=self.target_lang)
         ):
             if idx and idx % 100 == 0:
                 logger.info(f"..loaded {idx} target samples")
@@ -234,7 +236,7 @@ class Speech2SpeechFleursDatasetBuilderCustom:
 
         logger.info(f"Loading {self.source_lang} samples")
         for idx, sample in enumerate(
-            self.iterate_lang_audio_samples(lang=self.source_lang)
+            self.iterate_lang_audio_samples(data_dir=self.dataset_path, lang=self.source_lang)
         ):
             if idx and idx % 100 == 0:
                 logger.info(f"..loaded {idx} source samples")
