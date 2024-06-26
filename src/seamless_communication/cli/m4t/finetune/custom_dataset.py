@@ -118,6 +118,7 @@ def download_fleurs_dataset(
     source_lang: str,
     target_lang: str,
     split: str,
+    dataset_path: str,
     save_directory: str,
 ) -> str:
     _check_lang_code_mapping(source_lang)
@@ -134,6 +135,7 @@ def download_fleurs_dataset(
         skip_source_audio=True,  # don't extract units from source audio
         skip_target_audio=False,
         split=split,
+        dataset_path = dataset_path
     )
     manifest_path: str = os.path.join(save_directory, f"{split}_manifest.json")
     with open(manifest_path, "w") as fp_out:
