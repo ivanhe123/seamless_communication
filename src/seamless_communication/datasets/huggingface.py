@@ -94,7 +94,7 @@ class Speech2SpeechFleursDatasetBuilder:
             self.HF_FLEURS_DATASET_NAME,
             lang,
             split=self.split,
-            cache_dir=self.dataset_cache_dir,
+            data_dir = "/kaggle/working/fleurs",
             streaming=False,
         )
         for item in ds:
