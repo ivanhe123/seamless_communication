@@ -101,7 +101,7 @@ class Speech2SpeechFleursDatasetBuilder:
             data_dir="/kaggle/working/fleurs",
             streaming=False,
         )
-        max_id = max(dataset, key=lambda x: int(x["id"]))["id"]
+        max_id = max(ds, key=lambda x: int(x["id"]))["id"]
         for idx, item in enumerate(ds):
             audio_path = os.path.join(
                 os.path.dirname(item["path"]), item["audio"]["path"]
