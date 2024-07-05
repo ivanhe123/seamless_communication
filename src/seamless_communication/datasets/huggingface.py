@@ -139,7 +139,7 @@ class Speech2SpeechFleursDatasetBuilder:
             self.iterate_lang_audio_samples(lang=self.target_lang)
         ):
             if idx and idx % 100 == 0:
-                logger.info(f"..loaded {idx} target samples")
+                print(f"..loaded {idx} target samples")
             target_samples[sample.id] = sample
 
         logger.info(f"Loading {self.source_lang} samples")
@@ -147,7 +147,7 @@ class Speech2SpeechFleursDatasetBuilder:
             self.iterate_lang_audio_samples(lang=self.source_lang)
         ):
             if idx and idx % 100 == 0:
-                logger.info(f"..loaded {idx} source samples")
+                print(f"..loaded {idx} source samples")
             if sample.id in target_samples:
                 yield LangPairSample(source=sample, target=target_samples[sample.id])
 
