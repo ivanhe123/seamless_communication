@@ -98,7 +98,7 @@ class Speech2SpeechFleursDatasetBuilder:
             self.HF_FLEURS_DATASET_NAME,
             lang,
             split=self.split,
-            dataset_dir="/kaggle/working/fleurs",
+            data_dir="/kaggle/working/fleurs",
             streaming=False,
         )
         max_id = max(dataset, key=lambda x: int(x["id"]))["id"]
