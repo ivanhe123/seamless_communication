@@ -113,16 +113,8 @@ class Speech2SpeechFleursDatasetBuilder:
                 item["audio"]["sampling_rate"],
                 item["transcription"],
             )
-            for idx1 in range(idx+1, len(ds), len(ds)//10):
-                item1 = ds[idx1]
-                yield self._prepare_sample(
-                    sample_id=item1["id"]+max_id,
-                    audio_local_path=audio_local_path,
-                    waveform_npy=np.concatenate((waveform, item1["audio"]["array"])),
-                    sampling_rate=sampling_rate,
-                    text=text+item1["transcription"],
-                    lang = lang
-                )
+            
+
             yield self._prepare_sample(
                 sample_id=sample_id,
                 audio_local_path=audio_local_path,
