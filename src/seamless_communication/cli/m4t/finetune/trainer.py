@@ -43,13 +43,13 @@ class FinetuneMode(Enum):
 class FinetuneParams:
     model_name: str
     """Model name of model being finetuned."""
-    
+
     save_model_path: Path
     """Path were to save finetuned model."""
 
     finetune_mode: FinetuneMode = FinetuneMode.TEXT_TO_SPEECH
     """Allows to freeze S2T or T2U part of the model"""
-    
+
     float_dtype: torch.dtype = torch.float16
     """Float Dtype"""
 
@@ -94,11 +94,11 @@ class UnitYFinetuneWrapper(nn.Module):
         self.model: UnitYModel = model
         self.freeze_s2t: bool = mode == FinetuneMode.TEXT_TO_SPEECH
         self.freeze_t2u: bool = mode == FinetuneMode.SPEECH_TO_TEXT
-        logger.info(f"Freeze s2t: {self.freeze_s2t}, freeze t2u: {self.freeze_t2u}")
+        print(f"Freeze s2t: {self.freeze_s2t}, freeze t2u: {self.freeze_t2u}")
         self.device = device
 
     def forward(
-        self, batch: dataloader.MultimodalSeqsBatch
+            self, batch: dataloader.MultimodalSeqsBatch
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         dummy_context = contextmanager(lambda: iter([None]))()
         with torch.no_grad() if self.freeze_s2t else dummy_context:  # type:ignore
@@ -156,20 +156,20 @@ class CalcLoss:
     """Calculates negative log likelihood loss for S2T and T2U"""
 
     def __init__(
-        self,
-        label_smoothing: float,
-        s2t_vocab_info: VocabularyInfo,
-        t2u_vocab_info: Optional[VocabularyInfo],
+            self,
+            label_smoothing: float,
+            s2t_vocab_info: VocabularyInfo,
+            t2u_vocab_info: Optional[VocabularyInfo],
     ):
         self.label_smoothing = label_smoothing
         self.s2t_vocab_info = s2t_vocab_info
         self.t2u_vocab_info = t2u_vocab_info
 
     def __call__(
-        self,
-        batch: dataloader.MultimodalSeqsBatch,
-        text_logits: torch.Tensor,
-        unit_logits: Optional[torch.Tensor],
+            self,
+            batch: dataloader.MultimodalSeqsBatch,
+            text_logits: torch.Tensor,
+            unit_logits: Optional[torch.Tensor],
     ) -> torch.Tensor:
         assert batch.speech_to_text.target_lengths is not None
         prefix_skip_len = 1  # language tokens to skip
@@ -244,12 +244,12 @@ class LossCollector:
 
 class UnitYFinetune:
     def __init__(
-        self,
-        model: UnitYModel,
-        params: FinetuneParams,
-        train_data_loader: dataloader.UnitYDataLoader,
-        eval_data_loader: Optional[dataloader.UnitYDataLoader] = None,
-        freeze_modules: Optional[List[Union[str, torch.nn.Module]]] = None
+            self,
+            model: UnitYModel,
+            params: FinetuneParams,
+            train_data_loader: dataloader.UnitYDataLoader,
+            eval_data_loader: Optional[dataloader.UnitYDataLoader] = None,
+            freeze_modules: Optional[List[Union[str, torch.nn.Module]]] = None
     ):
         self.params = params
         self.calc_loss = CalcLoss(
@@ -259,14 +259,14 @@ class UnitYFinetune:
             if model.t2u_model is not None
             else None,
         )
-        
+
         self.model = self._wrap_model_for_trainining(model=model)
         if freeze_modules:
             self._freeze_modules(freeze_modules)
-        
+
         self.train_data_loader = train_data_loader
         self.eval_data_loader = eval_data_loader
-        
+
         self.grad_scaler = torch.cuda.amp.GradScaler()  # type: ignore
         self.optimizer = AdamW(
             params=self.model.parameters(),
@@ -311,24 +311,24 @@ class UnitYFinetune:
             device_ids=[dist_utils.get_local_rank()],
             find_unused_parameters=find_unused,
         )
-        
+
     def _freeze_modules(self, frozen_modules: List[str] = []) -> None:
         for icecube in frozen_modules:
             for (name, module) in self.model.named_modules():
                 if name.startswith(icecube):
-                    logger.info(f"Freezing Module: {name}")
+                    print(f"Freezing Module: {name}")
                     for param in module.parameters():
                         param.requires_grad = False
 
     def _update_eval_stats(self, eval_loss: float) -> None:
         self.is_best_state = (
-            self.best_eval_loss is None or eval_loss < self.best_eval_loss
+                self.best_eval_loss is None or eval_loss < self.best_eval_loss
         )
         self.best_eval_loss = eval_loss if self.is_best_state else self.best_eval_loss
         self.patience_left = (
             self.params.patience if self.is_best_state else self.patience_left - 1
         )
-        logger.info(
+        print(
             f"Eval after {self.update_idx} updates: "
             f"loss={eval_loss:.4f} "
             f"best_loss={self.best_eval_loss:.4f} "
@@ -340,7 +340,7 @@ class UnitYFinetune:
         """Calc avg loss on eval dataset and update evaluation stats"""
         if self.eval_data_loader is None:
             return
-        logger.info(f"Evaluation Step {self.update_idx // self.params.eval_steps}...")
+        print(f"Evaluation Step {self.update_idx // self.params.eval_steps}...")
         loss_hist = LossCollector(device=self.params.device)
         self.model.eval()
         for batch in self.eval_data_loader.get_dataloader():
@@ -363,7 +363,7 @@ class UnitYFinetune:
         if (self.update_idx + 1) % self.params.log_steps == 0:
             avg_loss = self.train_loss_hist.reduce()
             self.train_loss_hist.reset()
-            logger.info(
+            print(
                 f"Epoch {str(self.epoch_idx + 1).zfill(3)} / "
                 f"update {str(self.update_idx + 1).zfill(5)}: "
                 f"train loss={avg_loss:.4f} "
@@ -376,58 +376,58 @@ class UnitYFinetune:
         self.optimizer.zero_grad()
         with torch.autocast(device_type=self.params.device.type, dtype=self.params.float_dtype):
             tokens, units = self.model(batch)
-        
+
         loss = self.calc_loss(batch, tokens, units)
         if loss.isnan().any().item():
             logger.error(batch.speech_to_text)
             raise RuntimeError("Train loss is NaN! Something is wrong in the model!")
-        
+
         self.grad_scaler.scale(loss).backward()
         self.grad_scaler.step(self.optimizer)
         self.grad_scaler.update()
         self.lr_scheduler.step()
-        
+
         assert batch.speech_to_text.src_tokens is not None
         self.train_loss_hist.update(1, loss.item())
         self._train_step_log()
         self.update_idx += 1
 
     def _save_model(self) -> None:
-        logger.info("Saving model")
+        print("Saving model")
         if dist_utils.is_main_process():
             torch.save(self.model, self.params.save_model_path)
         if dist_utils.is_dist_initialized():
             dist.barrier()
 
     def run(self) -> None:
-        logger.info("Start Finetuning")
+        print("Start Finetuning")
         self._reset_stats()
         self._eval_model(n_batches=100)
-        
+
         train_dataloader = self.train_data_loader.get_dataloader()
-        
+
         while self.epoch_idx < self.params.max_epochs and self.patience_left:
             for train_batch in tqdm(train_dataloader, desc="Training Steps"):
                 # Run batch through train step
                 self._train_step(train_batch)
-                
+
                 # Perform eval if its time to eval
                 if not self.update_idx or self.update_idx % self.params.eval_steps != 0:
                     continue
-                
+
                 # Clear GPU memory for eval
                 torch.cuda.empty_cache()
                 self._eval_model(n_batches=100)
-                    
+
                 # Save the current model if its the best we've ever had
                 if self.is_best_state:
                     self._save_model()
                 elif not self.patience_left:
                     no_improve_steps = self.params.eval_steps * self.params.patience
-                    logger.info(
+                    print(
                         "Early termination, as eval loss did not improve "
                         f"over last {no_improve_steps} updates"
                     )
                     break
-                
+
             self.epoch_idx += 1
