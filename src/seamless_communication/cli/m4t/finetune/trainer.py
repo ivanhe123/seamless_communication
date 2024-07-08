@@ -94,7 +94,7 @@ class UnitYFinetuneWrapper(nn.Module):
         self.model: UnitYModel = model
         self.freeze_s2t: bool = mode == FinetuneMode.TEXT_TO_SPEECH
         self.freeze_t2u: bool = mode == FinetuneMode.SPEECH_TO_TEXT
-        print(f"Freeze s2t: {self.freeze_s2t}, freeze t2u: {self.freeze_t2u}")
+        logger.info(f"Freeze s2t: {self.freeze_s2t}, freeze t2u: {self.freeze_t2u}")
         self.device = device
 
     def forward(
@@ -316,7 +316,7 @@ class UnitYFinetune:
         for icecube in frozen_modules:
             for (name, module) in self.model.named_modules():
                 if name.startswith(icecube):
-                    print(f"Freezing Module: {name}")
+                    logger.info(f"Freezing Module: {name}")
                     for param in module.parameters():
                         param.requires_grad = False
 
@@ -328,7 +328,7 @@ class UnitYFinetune:
         self.patience_left = (
             self.params.patience if self.is_best_state else self.patience_left - 1
         )
-        print(
+        logger.info(
             f"Eval after {self.update_idx} updates: "
             f"loss={eval_loss:.4f} "
             f"best_loss={self.best_eval_loss:.4f} "
@@ -340,7 +340,7 @@ class UnitYFinetune:
         """Calc avg loss on eval dataset and update evaluation stats"""
         if self.eval_data_loader is None:
             return
-        print(f"Evaluation Step {self.update_idx // self.params.eval_steps}...")
+        logger.info(f"Evaluation Step {self.update_idx // self.params.eval_steps}...")
         loss_hist = LossCollector(device=self.params.device)
         self.model.eval()
         for batch in self.eval_data_loader.get_dataloader():
@@ -363,7 +363,7 @@ class UnitYFinetune:
         if (self.update_idx + 1) % self.params.log_steps == 0:
             avg_loss = self.train_loss_hist.reduce()
             self.train_loss_hist.reset()
-            print(
+            logger.info(
                 f"Epoch {str(self.epoch_idx + 1).zfill(3)} / "
                 f"update {str(self.update_idx + 1).zfill(5)}: "
                 f"train loss={avg_loss:.4f} "
@@ -393,14 +393,14 @@ class UnitYFinetune:
         self.update_idx += 1
 
     def _save_model(self) -> None:
-        print("Saving model")
+        logger.info("Saving model")
         if dist_utils.is_main_process():
             torch.save(self.model, self.params.save_model_path)
         if dist_utils.is_dist_initialized():
             dist.barrier()
 
     def run(self) -> None:
-        print("Start Finetuning")
+        logger.info("Start Finetuning")
         self._reset_stats()
         self._eval_model(n_batches=100)
 
@@ -424,7 +424,7 @@ class UnitYFinetune:
                     self._save_model()
                 elif not self.patience_left:
                     no_improve_steps = self.params.eval_steps * self.params.patience
-                    print(
+                    logger.info(
                         "Early termination, as eval loss did not improve "
                         f"over last {no_improve_steps} updates"
                     )
