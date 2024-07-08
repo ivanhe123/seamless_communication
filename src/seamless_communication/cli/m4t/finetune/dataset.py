@@ -154,15 +154,15 @@ def download_fleurs(
             sample.target.lang = target_lang
             sample.target.waveform = None  # already extracted units
             fp_out.write(json.dumps(dataclasses.asdict(sample)) + "\n")
-    logger.info(f"Saved {idx} samples for split={split} to {manifest_path}")
-    logger.info(f"Manifest saved to: {manifest_path}")
+    print(f"Saved {idx} samples for split={split} to {manifest_path}")
+    print(f"Manifest saved to: {manifest_path}")
 
 
 def download_gigaspeech(subset: str, huggingface_token: str, save_directory: str):
     ds = load_dataset("speechcolab/gigaspeech", subset, cache_dir=save_directory, token=huggingface_token)
     for split in ds:
         manifest_path = os.path.join(save_directory, f"{subset}_{split}_manifest.json")
-        logger.info(f"Preparing {split} split...")
+        print(f"Preparing {split} split...")
         with open(manifest_path, "w") as f:
             for sample in tqdm(ds[split]):
                 f.write(json.dumps({
@@ -179,7 +179,7 @@ def download_gigaspeech(subset: str, huggingface_token: str, save_directory: str
                     "lang": "eng",
                 }
                 }) + "\n")
-        logger.info(f"Manifest for GigaSpeech-{subset}-{split} saved to: {manifest_path}")
+        print(f"Manifest for GigaSpeech-{subset}-{split} saved to: {manifest_path}")
 
 
 def init_parser() -> argparse.ArgumentParser:
