@@ -390,7 +390,7 @@ class UnitYFinetune:
         assert batch.speech_to_text.src_tokens is not None
         self.train_loss_hist.update(1, loss.item())
         self._train_step_log()
-        _save_model()
+        self._save_model()
         self.update_idx += 1
 
     def _save_model(self) -> None:
