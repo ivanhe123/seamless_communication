@@ -51,7 +51,7 @@ def init_distributed(loggers: List[logging.Logger]) -> None:
     """Initializes the distributed backend"""
     torch.multiprocessing.set_start_method("spawn")
     if "RANK" not in os.environ:
-        logger.error(
+        print(
             "Cannot init disributed context, as environment varaibles are not set."
         )
         return
