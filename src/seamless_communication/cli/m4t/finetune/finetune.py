@@ -142,20 +142,6 @@ def init_parser() -> argparse.ArgumentParser:
         default=None
     )
     return parser
-
-def load_checkpoint(model: UnitYModel, path: str, device = "cpu",frozen) -> None:
-    state_dict = torch.load(path, map_location=device)["model"]
-
-    def _select_keys(state_dict: Dict[str, Any], prefix: str) -> Dict[str, Any]:
-        return {key.replace(prefix, ""): value for key, value in state_dict.items() if key.startswith(prefix)}
-    for fr in frozen:
-        fr.load_state_dict(_select_keys(state_dict, f"{fr}."))
-    for icecube in frozen:
-        for (name, module) in self.model.named_modules():
-            if name.startswith(icecube):
-                logger.info(f"Freezing Module: {name}")
-                for param in module.parameters():
-                    param.requires_grad = False
 def main() -> None:
     args = init_parser().parse_args()
     
