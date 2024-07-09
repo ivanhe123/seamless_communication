@@ -136,9 +136,20 @@ def init_parser() -> argparse.ArgumentParser:
         default="cuda",
         help=("Device to fine-tune on. See `torch.device`."),
     )
+    parser.add_argument(
+        "--new_fine",
+        nargs="*",
+        default=None
+    )
     return parser
 
+def load_checkpoint(model: UnitYModel, path: str, device = "cpu",frozen) -> None:
+    state_dict = torch.load(path, map_location=device)["model"]
 
+    def _select_keys(state_dict: Dict[str, Any], prefix: str) -> Dict[str, Any]:
+        return {key.replace(prefix, ""): value for key, value in state_dict.items() if key.startswith(prefix)}
+    for fr in frozen:
+        fr.load_state_dict(_select_keys(state_dict, f"{fr}."))
 def main() -> None:
     args = init_parser().parse_args()
     
@@ -167,6 +178,8 @@ def main() -> None:
     logger.info(f"Finetune Params: {finetune_params}")
     
     model = load_unity_model(args.model_name, device=torch.device("cpu"), dtype=torch.float32)
+    if new_fine != None:
+        
     assert model.target_vocab_info == text_tokenizer.vocab_info
     
     if (
