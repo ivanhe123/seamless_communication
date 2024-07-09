@@ -150,6 +150,12 @@ def load_checkpoint(model: UnitYModel, path: str, device = "cpu",frozen) -> None
         return {key.replace(prefix, ""): value for key, value in state_dict.items() if key.startswith(prefix)}
     for fr in frozen:
         fr.load_state_dict(_select_keys(state_dict, f"{fr}."))
+    for icecube in frozen:
+        for (name, module) in self.model.named_modules():
+            if name.startswith(icecube):
+                logger.info(f"Freezing Module: {name}")
+                for param in module.parameters():
+                    param.requires_grad = False
 def main() -> None:
     args = init_parser().parse_args()
     
@@ -178,8 +184,6 @@ def main() -> None:
     logger.info(f"Finetune Params: {finetune_params}")
     
     model = load_unity_model(args.model_name, device=torch.device("cpu"), dtype=torch.float32)
-    if new_fine != None:
-        
     assert model.target_vocab_info == text_tokenizer.vocab_info
     
     if (
